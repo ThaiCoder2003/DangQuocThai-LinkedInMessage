@@ -405,9 +405,10 @@ class MessageSender:
 
             // Trigger React update
             el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
         """, self.message_field, message)
 
-        time.sleep(random.uniform(1, 2))
+        time.sleep(random.uniform(2, 4))
     def open_chat(self):
         '''
             Open the chat window by clicking the message button. This will allow us to access the shadow DOM where the message field and send button are located.
@@ -489,22 +490,37 @@ class MessageSender:
         else:
             print("ERROR: Attachment input not found in shadow DOM")
             raise Exception("Attachment input not found")
+        
     def send(self):
-        '''
-            Finally, find the send button inside the shadow DOM and click it to send the message. We will check if the button is enabled before clicking.
-        '''
-        for _ in range(10):
-            send_btn = self.driver.execute_script(
-                f'return arguments[0].shadowRoot.querySelector("button{BUTTON_SUBMIT_MESSAGE}")',
-                self.shadow_host
-            )
+        for attempt in range(15):  # wait longer
+            try:
+                send_btn = self.driver.execute_script(
+                    f'return arguments[0].shadowRoot.querySelector("button{BUTTON_SUBMIT_MESSAGE}")',
+                    self.shadow_host
+                )
 
-            if send_btn and send_btn.is_enabled():
-                self.driver.execute_script("arguments[0].click();", send_btn)
-                print("✅ Message sent successfully")
-                time.sleep(0.5)
-                return
-            time.sleep(1)
+                if send_btn:
+                    # Scroll into view (important in headless)
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", send_btn)
+                    time.sleep(0.5)
+
+                    # Check if clickable via JS (more reliable than is_enabled)
+                    is_disabled = self.driver.execute_script(
+                        "return arguments[0].disabled;", send_btn
+                    )
+
+                    if not is_disabled:
+                        self.driver.execute_script("arguments[0].click();", send_btn)
+                        print("✅ Message sent successfully")
+                        time.sleep(1)
+                        return
+
+                print(f"⏳ Waiting for send button... ({attempt+1})")
+                time.sleep(1.5)
+
+            except Exception as e:
+                print(f"⚠️ Send attempt error: {e}")
+                time.sleep(1)
 
         raise Exception("Send button not found or disabled")
     

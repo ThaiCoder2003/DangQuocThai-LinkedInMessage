@@ -95,6 +95,8 @@ def human_type(element, text: str):
     for char in text:
         element.send_keys(char)
         time.sleep(random.uniform(0.05, 0.2))
+        
+        
 
 
 def handle_code_verification(driver: webdriver.Chrome):
@@ -377,7 +379,26 @@ class MessageSender:
                     if (btn) btn.closest("button").click();
                 }
             });
-        """)    
+        """)   
+        
+    def write(self, message):
+        self.driver.execute_script("""
+            const el = arguments[0];
+            const text = arguments[1];
+
+            el.focus();
+
+            // Clear properly
+            el.innerHTML = '';
+
+            // Insert text like a real paste
+            document.execCommand('insertText', false, text);
+
+            // Trigger React update
+            el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        """, self.message_field, message)
+
+        time.sleep(random.uniform(1, 2))
     def open_chat(self):
         '''
             Open the chat window by clicking the message button. This will allow us to access the shadow DOM where the message field and send button are located.
@@ -422,16 +443,7 @@ class MessageSender:
                 time.sleep(1)
                 
         raise Exception("Message field not found in shadow DOM")
-    def write(self, message):
-        '''
-            Simulate human typing to write the message in the message field. This makes it less likely to be detected as a bot.
-        '''
-        human_type(self.message_field, message)
-        time.sleep(2)
-        self.driver.execute_script("""
-            var event = new Event('input', { bubbles: true });
-            arguments[0].dispatchEvent(event);
-        """, self.message_field)
+    
     def attach_file(self, path):
         '''
             If there is an attachment, find the file input inside the shadow DOM and send the file path to it. This will upload the file to the message.

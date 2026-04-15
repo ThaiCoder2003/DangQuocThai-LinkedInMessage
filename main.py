@@ -492,6 +492,7 @@ class MessageSender:
             raise Exception("Attachment input not found")
         
     def send(self):
+        self.driver.save_screenshot("before_send.png")
         for attempt in range(15):  # wait longer
             try:
                 send_btn = self.driver.execute_script(

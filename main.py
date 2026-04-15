@@ -649,7 +649,8 @@ def main():
             df.to_csv('data/message_sheet.csv', index=False) # Save progress after each message
             if index < len(df) - 1:
                 delay() # Random delay between messages
-            
+        
+        return True  
     except Exception as e:
         print(f"[CRON] ❌ CRITICAL ERROR: {e}")
         import traceback

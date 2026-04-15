@@ -31,7 +31,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/test_sheet.csv
+          git add data/message_sheet.csv
           git diff --cached --quiet || git commit -m "Update LinkedIn connection status [skip ci]"
           git push || echo "Push skipped"
         env:

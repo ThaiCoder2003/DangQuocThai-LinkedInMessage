@@ -1,3 +1,4 @@
+import math
 import os
 import time
 import base64
@@ -331,12 +332,13 @@ def check_datum(datum):
     # KIỂM TRA TỆP ĐÍNH KÈM.
 
     abs_path = None
-    if attachment:
-        # Check the attachment in attachments folder
-        abs_path = os.path.abspath(os.path.join("attachments", attachment))
-        if not os.path.exists(abs_path):
-            print("ERROR: ATTACHMENT NOT FOUND!")
-            abs_path = None
+    if attachment and not (isinstance(attachment, float) and math.isnan(attachment)):
+        attachment = str(attachment).strip()
+        if attachment:
+            abs_path = os.path.abspath(os.path.join("attachments", attachment))
+            if not os.path.exists(abs_path):
+                print("ERROR: ATTACHMENT NOT FOUND!")
+                abs_path = None
     final_message = message.replace("{{Name}}", name)
 
     return {

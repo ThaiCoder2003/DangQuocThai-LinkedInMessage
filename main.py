@@ -17,14 +17,15 @@ import undetected_chromedriver as uc
 
 
 def get_local_data():
-    file_path = 'data/message_sheet.csv' # Tên file bạn để trong Repo
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, 'data', 'message_sheet.csv')
+
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
-        # df = pd.read_excel('test_data.xlsx') # Nếu dùng Excel
-        print(f"📊 Đã nạp {len(df)} dòng từ file {file_path}")
+        print(f"📊 Loaded {len(df)} rows from {file_path}")
         return df
     else:
-        print("❌ ERROR: Không tìm thấy file dữ liệu!")
+        print(f"❌ ERROR: File not found at {file_path}")
         return None
 
 def get_driver():
@@ -323,7 +324,7 @@ def check_datum(datum):
     abs_path = None
     if attachment:
         # Check the attachment in attachments folder
-        abs_path = os.path.join("attachments", attachment)
+        abs_path = os.path.abspath(os.path.join("attachments", attachment))
         if not os.path.exists(abs_path):
             print("ERROR: ATTACHMENT NOT FOUND!")
             abs_path = None
@@ -334,37 +335,6 @@ def check_datum(datum):
         "Message": final_message,
         "Attachment": abs_path
     }
-
-def get_shadow_element_with_retry(driver, shadow_host_selector, target_selector, retries=5):
-  """
-    Search for an element inside shadow DOM with retries. This is useful because sometimes the shadow DOM content may take a while to load after clicking the message button.
-  """
-  for i in range(retries):
-      try:
-          shadow_host = driver.find_element(By.CSS_SELECTOR, shadow_host_selector)
-
-          script = """
-            var host = arguments[0];
-            var selector = arguments[1];
-            if (host && selector) {
-              return host.shadowRoot.querySelector(selector);
-            }
-
-            return null;
-          """
-
-          shadow_element = driver.execute_script(script, shadow_host, target_selector)
-
-          if shadow_element:
-              return shadow_element
-      except Exception:
-          time.sleep(1)
-          continue
-
-  print(f"❌ Timout: Không tìm thấy '{target_selector}' sau {retries} lần thử.")
-  return None
-
-
 
 class MessageSender:
     def __init__(self, driver: webdriver.Chrome):
@@ -436,7 +406,7 @@ class MessageSender:
         '''        
         
         # Try to get the message field with retries, as it may take time to load after opening the chat. Give 5 attempts
-        for _ in range(5):
+        for _ in range(10):
             try:
                 self.message_field = self.driver.execute_script(
                     f'return arguments[0].shadowRoot.querySelector("{FIELD_MESSAGE}")',
@@ -564,17 +534,23 @@ def delay():
 
 def main():
     # Take a random break at the start to avoid being detected as a bot if running on a schedule
-    time.sleep(random.randint(60, 1800))    
+    # time.sleep(random.randint(60, 1800))    
     driver = get_driver()
     
     sender = MessageSender(driver)
-    results = []
     try:
         # Get data from CSV
         df = get_local_data()
         if df is None:
             print("[CRON] ❌ ERROR: Could not load data file")
             return False
+        
+        username = os.getenv("LINKEDIN_USERNAME")
+        password = os.getenv("LINKEDIN_PASSWORD")
+        if not username or not password:
+            print("[CRON] ❌ ERROR: LinkedIn credentials not set in environment variables")
+            return False
+        
         
         print("[CRON] 🔄 Attempting to restore session with cookies...")
         if load_session_with_cookies(driver):
@@ -590,12 +566,7 @@ def main():
         print("[CRON] ✅ Ready to send connections")
         
         # Get credentials from environment variables
-        username = os.getenv("LINKEDIN_USERNAME")
-        password = os.getenv("LINKEDIN_PASSWORD")
-        if not username or not password:
-            print("[CRON] ❌ ERROR: LinkedIn credentials not set in environment variables")
-            return False
-        
+
         count = 0 
         message_sent = 0
         limit = 20 # Limit the number of messages sent in one run to avoid detection
@@ -622,6 +593,15 @@ def main():
             
             status = sender.run(row)
             
+            # Save the result back to the dataframe
+            df.at[index, "Status"] = status
+            if "SUCCESS" in status:
+                count += 1
+                message_sent += 1
+            df.to_csv('data/message_sheet.csv', index=False) # Save progress after each message
+            if index < len(df) - 1:
+                delay() # Random delay between messages
+            
     except Exception as e:
         print(f"[CRON] ❌ CRITICAL ERROR: {e}")
         import traceback
@@ -629,7 +609,10 @@ def main():
         return False
         
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
         
 if __name__ == "__main__":
     success = main()

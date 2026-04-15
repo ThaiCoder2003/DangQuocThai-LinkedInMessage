@@ -1,0 +1,48 @@
+name: LinkedIn Auto Run
+on:
+  repository_dispatch:
+    types: [trigger-linkedin]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+      - name: Run Script
+        run: xvfb-run python3 main.py
+        env:
+          LINKEDIN_USERNAME: ${{ secrets.LINKEDIN_USERNAME }}
+          LINKEDIN_PASSWORD: ${{ secrets.LINKEDIN_PASSWORD }}
+          LINKEDIN_COOKIES: ${{ secrets.LINKEDIN_COOKIES }}
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/test_sheet.csv
+          git diff --cached --quiet || git commit -m "Update LinkedIn connection status [skip ci]"
+          git push || echo "Push skipped"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Logs and Cookies
+        uses: actions/upload-artifact@v4
+        if: always() # Luôn chạy kể cả khi script bị lỗi
+        with:
+          name: bot-debug-data
+          path: |
+            *.png
+            *.pkl
+            *.log
+            data/test_sheet.csv

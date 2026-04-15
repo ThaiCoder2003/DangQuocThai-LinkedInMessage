@@ -8,6 +8,7 @@ import random
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -397,18 +398,38 @@ class MessageSender:
 
             el.focus();
 
-            // Clear properly
+            // Clear existing content
             el.innerHTML = '';
 
-            // Insert text like a real paste
-            document.execCommand('insertText', false, text);
+            // Insert text properly
+            const lines = text.split("\\n");
+            lines.forEach((line, index) => {
+                el.innerHTML += line;
+                if (index < lines.length - 1) {
+                    el.innerHTML += "<br>";
+                }
+            });
 
-            // Trigger React update
-            el.dispatchEvent(new InputEvent('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+            // 🔥 CRITICAL: Trigger real input event
+            const event = new InputEvent('input', {
+                bubbles: true,
+                cancelable: true,
+                inputType: 'insertText',
+                data: text
+            });
+
+            el.dispatchEvent(event);
         """, self.message_field, message)
 
+        self.driver.execute_script("""
+            arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+        """, self.message_field)
+        
+        self.message_field.click()
+        self.message_field.send_keys(" ")   # trigger real input
+        self.message_field.send_keys(Keys.BACKSPACE)
         time.sleep(random.uniform(2, 4))
+        
     def open_chat(self):
         '''
             Open the chat window by clicking the message button. This will allow us to access the shadow DOM where the message field and send button are located.

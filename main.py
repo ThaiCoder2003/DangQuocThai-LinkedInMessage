@@ -41,6 +41,13 @@ def get_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-images")
+    
+    options.page_load_strategy = 'eager'
     
     driver = uc.Chrome(options=options, version_main=146)
     return driver
@@ -548,6 +555,7 @@ def main():
     # Take a random break at the start to avoid being detected as a bot if running on a schedule
     # time.sleep(random.randint(60, 1800))    
     driver = get_driver()
+    driver.set_page_load_timeout(300)  # 5 minutes
     
     sender = MessageSender(driver)
     try:
@@ -600,9 +608,17 @@ def main():
                 time.sleep(random.randint(600, 1800))
                 message_sent = 0
                 
-            driver.get(row["Link"])
-            time.sleep(random.uniform(3, 6))
-            
+            for attempt in range(3):
+                try:
+                    driver.get(row["Link"])
+                    break
+                except Exception as e:
+                    print(f"⚠️ Page load failed (attempt {attempt+1}): {e}")
+                    if attempt == 2:
+                        raise
+                    time.sleep(random.uniform(5, 15))
+            time.sleep(random.uniform(5, 10))
+                        
             status = sender.run(row)
             
             # Save the result back to the dataframe

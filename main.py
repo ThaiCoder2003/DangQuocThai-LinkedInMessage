@@ -392,43 +392,23 @@ class MessageSender:
         """)   
         
     def write(self, message):
-        self.driver.execute_script("""
-            const el = arguments[0];
-            const text = arguments[1];
+        actions = ActionChains(self.driver)
 
-            el.focus();
-
-            // Clear existing content
-            el.innerHTML = '';
-
-            // Insert text properly
-            const lines = text.split("\\n");
-            lines.forEach((line, index) => {
-                el.innerHTML += line;
-                if (index < lines.length - 1) {
-                    el.innerHTML += "<br>";
-                }
-            });
-
-            // 🔥 CRITICAL: Trigger real input event
-            const event = new InputEvent('input', {
-                bubbles: true,
-                cancelable: true,
-                inputType: 'insertText',
-                data: text
-            });
-
-            el.dispatchEvent(event);
-        """, self.message_field, message)
-
-        self.driver.execute_script("""
-            arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
-        """, self.message_field)
-        
         self.message_field.click()
-        self.message_field.send_keys(" ")   # trigger real input
-        self.message_field.send_keys(Keys.BACKSPACE)
-        time.sleep(random.uniform(2, 4))
+        time.sleep(1)
+
+        # Clear field properly
+        actions.key_down(Keys.CONTROL).send_keys("a").key_up(Keys.CONTROL).perform()
+        actions.send_keys(Keys.DELETE).perform()
+        time.sleep(0.5)
+
+        # Type like a human (but faster than your old version)
+        for line in message.split("\n"):
+            actions.send_keys(line)
+            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
+        actions.perform()
+
+        time.sleep(2)
         
     def open_chat(self):
         '''

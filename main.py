@@ -255,7 +255,7 @@ def login(driver: webdriver.Chrome, username: str, password: str):
                 time.sleep(random.uniform(10, 20))
 
                 driver.execute_script("window.scrollBy(0, 300);")
-                time.sleep(random.uniform(3, 6))
+                time.sleep(random.uniform(5, 10))
                 driver.execute_script("window.scrollTo(0, 0);")
                 time.sleep(random.uniform(2, 5))
                 return True
@@ -284,7 +284,7 @@ def login(driver: webdriver.Chrome, username: str, password: str):
             time.sleep(random.uniform(10, 20))
 
             driver.execute_script("window.scrollBy(0, 300);")
-            time.sleep(random.uniform(3, 6))
+            time.sleep(random.uniform(5, 1))
             driver.execute_script("window.scrollTo(0, 0);")
             time.sleep(random.uniform(2, 5))
             return True
@@ -310,7 +310,7 @@ def login(driver: webdriver.Chrome, username: str, password: str):
 
 # XPATH ỨNG VỚI NÚT MESSAGE.
 #BUTTON_MESSAGE = "/html/body/div[5]/div[3]/div/div/div[2]/div/div/main/section[1]/div[2]/div[3]/div/div[1]/button"
-BUTTON_MESSAGE = "//main//section[1]//a[contains(., 'Message')]"
+BUTTON_MESSAGE = "//main//section[1]//a[contains(@href, 'messaging') or contains(., 'Message')]"
 SHADOW_DOM_ID = "#interop-outlet"
 # CSS_SELECTOR ỨNG VỚI KHUNG TIN NHẮN. (CLASS NAME)
 FIELD_MESSAGE = ".msg-form__contenteditable"
@@ -414,8 +414,13 @@ class MessageSender:
         '''
             Open the chat window by clicking the message button. This will allow us to access the shadow DOM where the message field and send button are located.
         '''
+        index = 0
         last_error = None
         wait = WebDriverWait(self.driver, 10)
+        buttons = self.driver.find_elements(By.XPATH, BUTTON_MESSAGE)
+        if not buttons:
+            self.driver.save_screenshot("message_button_not_found.png")
+            raise Exception("Message button not found on the page")
         for attempt in range(3):
             try:
                 message_btn = wait.until(EC.element_to_be_clickable((By.XPATH, BUTTON_MESSAGE)))
@@ -428,9 +433,13 @@ class MessageSender:
                     self.shadow_host = hosts[0]
                     return
             except Exception as e:
+                index += 1
                 last_error = e
-                print(f"⚠️ Attempt {attempt+1} failed: {e}")
-                time.sleep(2)
+                print(f"⚠️ Attempt {attempt} failed: {e}")
+                self.driver.refresh()
+                time.sleep(random.uniform(5, 10))
+                index += 1
+        self.driver.save_screenshot(f"fail_{index}.png")
         raise Exception(f"Failed to open chat window: {last_error}")
     def prepare_field(self):
         '''

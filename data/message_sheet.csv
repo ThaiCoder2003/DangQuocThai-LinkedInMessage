@@ -7,12 +7,31 @@ I have attached my brief profile for your review. Looking forward to your though
 
 Best regards,
 Henry Universes, PhD",sample.pdf
-Ray DA,https://www.linkedin.com/in/ray-da-684277236/,NOT SENT,"Dear {{Name}},
+Ray DA,https://www.linkedin.com/in/ray-da-684277236/,"ERROR: Failed to open chat window: Message: 
+Stacktrace:
+#0 0x56522c8d8a6a <unknown>
+#1 0x56522c2e7ab5 <unknown>
+#2 0x56522c33a676 <unknown>
+#3 0x56522c33a8b1 <unknown>
+#4 0x56522c385614 <unknown>
+#5 0x56522c3827b6 <unknown>
+#6 0x56522c32dcbf <unknown>
+#7 0x56522c32ea81 <unknown>
+#8 0x56522c89ea64 <unknown>
+#9 0x56522c8a1951 <unknown>
+#10 0x56522c88b21e <unknown>
+#11 0x56522c8a251e <unknown>
+#12 0x56522c871be0 <unknown>
+#13 0x56522c8c59b8 <unknown>
+#14 0x56522c8c5b88 <unknown>
+#15 0x56522c8d74de <unknown>
+#16 0x7f860be9caa4 <unknown>
+#17 0x7f860bf29c6c <unknown>
+","Dear {{Name}},
 I saw your Linkedin profile and it sounds like there is room to cooperate.
 We are looking for Software Developers willing to provide their services to our clients and partners.
 Does it make sense to connect ?
 
 Best,
 Henry Universes, PhD
-"
-
+",
